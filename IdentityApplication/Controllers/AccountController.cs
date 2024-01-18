@@ -56,7 +56,8 @@ namespace IdentityServer.Controllers
                     EmailConfirmed = false,
                     PhoneNumberConfirmed = true,
                     SecurityStamp = Guid.NewGuid().ToString(),
-                    IsTemporaryPassword = registerModel.IsTemporaryPassword
+                    IsTemporaryPassword = registerModel.IsTemporaryPassword,
+                    PhoneNumber=registerModel.Number
                 };
                 if(await _roleManager.RoleExistsAsync(registerModel.UserType))
                 {
@@ -284,6 +285,20 @@ namespace IdentityServer.Controllers
             {
                 return BadRequest(new ApiResponse<string>((int)StatusCodes.Status500InternalServerError, false, ex.Message));
             }
+        }
+        private JwtSecurityToken GetToken(List<Claim> authClaims)
+        {
+            var authSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JWT:Secret"]));
+
+            var token = new JwtSecurityToken(
+                issuer: _configuration["JWT:ValidIssuer"],
+                audience: _configuration["JWT:ValidAudience"],
+                expires: DateTime.Now.AddHours(3),
+                claims: authClaims,
+                signingCredentials: new SigningCredentials(authSigningKey, SecurityAlgorithms.HmacSha256) 
+                );
+
+            return token;
         }
     }
 }

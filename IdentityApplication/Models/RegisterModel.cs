@@ -12,6 +12,7 @@ namespace IdentityServer.Models
         [Required(ErrorMessage = "Password is required")]
         public string? Password { get; set; }     
         public string? UserType { get; set; }
+        public string? Number {  get; set; }
         public bool IsTemporaryPassword { get; set; }
     }
 }
