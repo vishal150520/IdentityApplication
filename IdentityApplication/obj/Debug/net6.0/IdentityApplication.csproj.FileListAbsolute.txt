@@ -74,3 +74,6 @@ C:\Users\conta\Desktop\backend\IdentityApplication\IdentityApplication\obj\Debug
 C:\Users\conta\Desktop\backend\IdentityApplication\IdentityApplication\obj\Debug\net6.0\IdentityApplication.pdb
 C:\Users\conta\Desktop\backend\IdentityApplication\IdentityApplication\obj\Debug\net6.0\IdentityApplication.genruntimeconfig.cache
 C:\Users\conta\Desktop\backend\IdentityApplication\IdentityApplication\obj\Debug\net6.0\ref\IdentityApplication.dll
+C:\Users\conta\Desktop\backend\IdentityApplication\IdentityApplication\bin\Debug\net6.0\Otp.NET.dll
+C:\Users\conta\Desktop\backend\IdentityApplication\IdentityApplication\bin\Debug\net6.0\ASPSMS.dll
+C:\Users\conta\Desktop\backend\IdentityApplication\IdentityApplication\bin\Debug\net6.0\Twilio.dll

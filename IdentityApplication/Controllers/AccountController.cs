@@ -14,6 +14,16 @@ using System.Net;
 using System.Net.Http;
 using System.Security.Claims;
 using System.Text;
+using OtpNet;
+using Microsoft.Extensions.Options;
+using System.Threading.Tasks;
+using Twilio;
+using Twilio.Rest.Api.V2010.Account;
+using Twilio.Types;
+using Microsoft.EntityFrameworkCore;
+using static System.Net.WebRequestMethods;
+using System.Collections.Specialized;
+using System.Web;
 
 namespace IdentityServer.Controllers
 {
@@ -54,7 +64,7 @@ namespace IdentityServer.Controllers
                     UserName = registerModel.Email,
                     Email = registerModel.Email,
                     EmailConfirmed = false,
-                    PhoneNumberConfirmed = true,
+                    PhoneNumberConfirmed = false,
                     SecurityStamp = Guid.NewGuid().ToString(),
                     IsTemporaryPassword = registerModel.IsTemporaryPassword,
                     PhoneNumber=registerModel.Number
@@ -242,7 +252,6 @@ namespace IdentityServer.Controllers
                 return BadRequest(new ApiResponse<string>((int)HttpStatusCode.InternalServerError, false, ex.Message));
             }
         }
-
         [HttpPost]
         [Route("resetpassword")]
         public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordModel resetPasswordModel)
@@ -295,10 +304,55 @@ namespace IdentityServer.Controllers
                 audience: _configuration["JWT:ValidAudience"],
                 expires: DateTime.Now.AddHours(3),
                 claims: authClaims,
-                signingCredentials: new SigningCredentials(authSigningKey, SecurityAlgorithms.HmacSha256) 
+                signingCredentials: new SigningCredentials(authSigningKey, SecurityAlgorithms.HmacSha256)
                 );
 
             return token;
+        }
+        [HttpPost]
+        [Route("generatephonenumberconfirmationtoken")]
+        public async Task<IActionResult> GeneratePhoneNumberConfirmationToken([FromBody] string phoneNumber)
+        {
+            string pno= phoneNumber.TrimStart('+');
+            var user = await _userManager.Users.FirstOrDefaultAsync(u => u.PhoneNumber == phoneNumber);
+            if (user == null)
+            {
+                return BadRequest(new ApiResponse<string>((int)StatusCodes.Status400BadRequest, false, "User not found"));
+            }
+
+            var phoneNumberConfirmationToken = await _userManager.GenerateChangePhoneNumberTokenAsync(user, phoneNumber);
+            String message = HttpUtility.UrlEncode("This is your message");
+            return Ok(new Response(new
+            {
+                PhoneNumberConfirmationToken = phoneNumberConfirmationToken
+            }));
+        }
+        [HttpPost]
+        [Route("confirmphonenumber")]
+        public async Task<IActionResult> ConfirmPhoneNumber([FromBody] PhoneNumberConfirmation phoneNumberConfirmation)
+        {
+            try
+            {
+                var user = await _userManager.Users.FirstOrDefaultAsync(u => u.PhoneNumber == phoneNumberConfirmation.PhoneNumber);
+
+                if (user == null)
+                {
+                    return BadRequest(new ApiResponse<string>((int)StatusCodes.Status400BadRequest, false, "User not found"));
+                }
+
+                var result = await _userManager.ChangePhoneNumberAsync(user, phoneNumberConfirmation.PhoneNumber, phoneNumberConfirmation.Token);
+
+                if (result != null && result.Succeeded)
+                {
+                    return Ok(new ApiResponse<string>((int)StatusCodes.Status200OK, true, "Phone Number Confirmed successfully!"));
+                }
+
+                return BadRequest(new ApiResponse<string>((int)StatusCodes.Status500InternalServerError, false, result.Errors.FirstOrDefault()?.Description?.ToString()));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new ApiResponse<string>((int)StatusCodes.Status500InternalServerError, false, ex.Message));
+            }
         }
     }
 }
